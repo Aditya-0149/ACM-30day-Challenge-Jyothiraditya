@@ -1,1 +1,63 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from xgboost import XGBClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import matplotlib.pyplot as plt
+
+df = pd.read_csv("data.csv")
+print(df.head())
+
+df = df.drop('id', axis=1)
+df['diagnosis'] = df['diagnosis'].map({'M': 1, 'B': 0})
+print("Null Values:\n", df.isnull().sum())
+
+X = df.drop('diagnosis', axis=1)
+y = df['diagnosis']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+rf_preds = rf.predict(X_test)
+rf_acc = accuracy_score(y_test, rf_preds)
+print("Random Forest Accuracy:", rf_acc)
+
+ada = AdaBoostClassifier(n_estimators=100, random_state=42)
+ada.fit(X_train, y_train)
+ada_preds = ada.predict(X_test)
+ada_acc = accuracy_score(y_test, ada_preds)
+print("AdaBoost Accuracy:", ada_acc)
+
+xgb = XGBClassifier(n_estimators=100, use_label_encoder=False, eval_metric='logloss', random_state=42)
+xgb.fit(X_train, y_train)
+xgb_preds = xgb.predict(X_test)
+xgb_acc = accuracy_score(y_test, xgb_preds)
+print("XGBoost Accuracy:", xgb_acc)
+
+results = {
+    'Random Forest': rf_acc,
+    'AdaBoost': ada_acc,
+    'XGBoost': xgb_acc
+}
+
+print("\n--- Model Accuracies ---")
+for model, acc in results.items():
+    print(f"{model}: {acc:.4f}")
+
+plt.bar(results.keys(), results.values(), color=['skyblue', 'orange', 'green'])
+plt.title("Model Accuracy Comparison")
+plt.ylabel("Accuracy")
+plt.ylim(0.9, 1)
+plt.show()
+
+models = {'Random Forest': rf_preds, 'AdaBoost': ada_preds, 'XGBoost': xgb_preds}
+
+for model_name, preds in models.items():
+    print(f"\n--- {model_name} ---")
+    print("Confusion Matrix:")
+    print(confusion_matrix(y_test, preds))
+    print("Classification Report:")
+    print(classification_report(y_test, preds))
 
